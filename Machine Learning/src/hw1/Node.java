@@ -9,6 +9,7 @@ public class Node {
 	private double entropy;
 	private boolean isUsed;
 	private HwAttribute label;
+	private int pathFromParent;
 
 	public Node() {
 		parent = null;
@@ -16,8 +17,17 @@ public class Node {
 		entropy = -1.0;
 		isUsed = false;
 		label = null;
+		pathFromParent = -1;
+	}
+	
+	public void setPathFromParent(int k) {
+		this.pathFromParent = k;
 	}
 
+	public int getPathFromParent() {
+		return pathFromParent;
+	}
+	
 	public void setParent(Node parent) {
 		this.parent = parent;
 	}
