@@ -79,7 +79,6 @@ public class Tree {
 		int bestAttribute = -1;
 		// remained feature
 		root.setEntropy(Entropy.calculateEntropy(dataset, numb_label));
-		System.out.println("root " + root.getEntropy());
 
 		for (int i : attributeSet.keySet()) {
 			int numbOftypes = attributeSet.get(i).getAttributes().size();
@@ -119,7 +118,7 @@ public class Tree {
 		return sameLabelAllData;
 	}
 
-	public Node buildTree(ArrayList<Data> dataset, HashMap<Integer, AttributeSet> attributeSet, int commonLabel,
+	/*public Node buildTree(ArrayList<Data> dataset, HashMap<Integer, AttributeSet> attributeSet, int commonLabel,
 			Node root, int maxDepth) {
 		if (maxDepth == 1) {
 			int majorityLabel = majorityLabel(dataset, numb_label);
@@ -226,7 +225,7 @@ public class Tree {
 			return root;
 		}
 
-	}
+	}*/
 
 	public static int majorityLabel(ArrayList<Data> dataset, int numb_label2) {
 		int countMax = 0;
@@ -255,6 +254,75 @@ public class Tree {
 			}
 		}
 		return subset;
+	}
+
+	public Node buildTree(ArrayList<Data> dataset, HashMap<Integer, AttributeSet> attributeSet, int commonLabel,
+			Node root, int maxDepth) {
+		if (maxDepth == 1) {
+			int majorityLabel = majorityLabel(dataset, numb_label);
+			root.setAttribute(new HwAttribute("outcome", majorityLabel));
+			return root;
+		}
+		// same label for all data
+				if (sameLabel(dataset)) {
+					root.setAttribute(dataset.get(0).getAttributes().get(0));
+					return root;
+				}
+				// number of predicting attributes is empty
+				else if (attributeSet.size() == 0) {
+					root.setAttribute(new HwAttribute("outcome", majorityLabel(dataset, numb_label)));
+					return root;
+				} else {
+					int bestAttribute = -1;
+					// A ← The Attribute that best classifies examples.
+					if (attributeSet.size() == 1) {
+						for (int key : attributeSet.keySet()) {
+							bestAttribute = key;
+							break;
+						}
+					}
+
+					else {
+						bestAttribute = bestAttributeIndex(dataset, attributeSet, root);
+					}
+					AttributeSet set = attributeSet.get(bestAttribute);
+					root.setAttribute(new HwAttribute(set.getName(), -1));
+
+					// new attribute set without A
+					HashMap<Integer, AttributeSet> replaceSet = new HashMap<Integer, AttributeSet>();
+					for (int key : attributeSet.keySet()) {
+						if (key != bestAttribute) {
+							replaceSet.put(key, attributeSet.get(key));
+						}
+					}
+
+					// recurse to children node
+					int types = set.getAttributes().size();
+					for (int k = 0; k < types; k++) {
+						// Add a new tree branch corresponding to A=v
+						Node node = new Node();
+						node.setPathFromParent(k);
+						// node.setParent(root);
+						// node.setUsed(true);
+
+						// Let Sv be the subset of examples in S with A=v
+						ArrayList<Data> nodeset = subset(dataset, bestAttribute, k);
+						// if Sv is empty: add leaf node with the common value of Label in S
+						if (nodeset.size() == 0) {
+							node.setAttribute(new HwAttribute("outcome", majorityLabel(dataset, numb_label)));
+						} else {
+							// node.setAttribute(new HwAttribute(set.getName(), k));
+							// System.out.println(String.format("replace set size: %d",
+							// replaceSet.size()));
+							node = buildTree(nodeset, replaceSet, commonLabel, node,maxDepth-1);
+						}
+
+						root.addChild(k, node);
+					}
+					// System.out.println(String.format("%s %d",
+					// root.getAttribute().getName(), root.getPathFromParent()));
+					return root;
+				}
 	}
 
 }

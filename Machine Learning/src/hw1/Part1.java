@@ -131,16 +131,22 @@ public class Part1 {
 	public static int traverseTree(Data data, Node root) {
 		int value = 0;
 		if(!root.getChildren().isEmpty()) {
+			
 			String attribute = root.getAttribute().getName();
 			int path = data.getAttribute(attribute).getValue();
-			for (int i = 0; i < root.getChildren().size(); i++) {
+			Node child = root.getChildren().get(path);
+			return traverseTree(data, child);
+			/*for (int i = 0; i < root.getChildren().size(); i++) {
 				if (root.getChildren().get(i).getPathFromParent() == path) {
 					value = traverseTree(data,root.getChildren().get(i));
 					break;
 				}
-			}
+			}*/
 		}
-		return value;
+		else {
+			return root.getAttribute().getValue();
+		}
+		
 	}
 	public static double sd(double[] errors) {
 		double total = 0;
