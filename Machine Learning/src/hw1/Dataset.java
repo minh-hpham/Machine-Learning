@@ -86,22 +86,28 @@ public class Dataset {
 					}
 				}
 				if (countVowels <= 5) {
-					data_attributes.add(new HwAttribute("totalVowels <= 5", HwAttribute.yes));
+					data_attributes.add(new HwAttribute("totalVowels_lessequal_5", HwAttribute.yes));
 				}else {
-					data_attributes.add(new HwAttribute("totalVowels <= 5", HwAttribute.no));
+					data_attributes.add(new HwAttribute("totalVowels_lessequal_5", HwAttribute.no));
 				}
 				
 				// first letter of first name is in {B,T,L,K,N,W,G}
-				if ("btlknwg".indexOf(st[line_len-1].charAt(0)) > 0) {
+				if ("btlknwg".indexOf(st[1].charAt(0)) >= 0) {
 					data_attributes.add(new HwAttribute("firstLetterBTLKNWG", HwAttribute.yes));
 				}else {
 					data_attributes.add(new HwAttribute("firstLetterBTLKNWG", HwAttribute.no));
 				}
 				// first letter of first name is not in {A,R,F,H}
-				if ("arfh".indexOf(st[line_len-1].charAt(0)) > 0) {
-					data_attributes.add(new HwAttribute("firstLetterARFH", HwAttribute.no));
-				}else {
+				if ("arfh".indexOf(st[1].charAt(0)) < 0) {
 					data_attributes.add(new HwAttribute("firstLetterARFH", HwAttribute.yes));
+				}else {
+					data_attributes.add(new HwAttribute("firstLetterARFH", HwAttribute.no));
+				}
+				// ratio of firstname by last name is less than 1
+				if((st[1].length()/st[line_len-1].length()) < 1) {
+					data_attributes.add(new HwAttribute("ratio_less_1", HwAttribute.yes));
+				} else {
+					data_attributes.add(new HwAttribute("ratio_less_1", HwAttribute.no));
 				}
 				// last letter of first name has aschii value less than 
 				data.setAttributes(data_attributes);

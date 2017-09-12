@@ -29,25 +29,21 @@ public class HwAttribute extends Attribute {
 	enum lastname_numLetters_even {
 		yes,no
 	}
+	enum totalVowels_lessequal_5 {
+		yes,no
+	}
+	enum firstLetterBTLKNWG {
+		yes,no
+	}
+	enum firstLetterARFH {
+		yes,no
+	}
+	enum ratio_less_1 {
+		yes,no
+	}
 	
 	public HwAttribute(String name, int value) {
 		super(name, value);
 	}
-	/*
-	public static int getAttributeSize(String name) {
-		if(name.equals("firstname_longer_than_lastname")) {
-			return firstname_longer_than_lastname.values().length;
-		} else if (name.equals("have_middlename")) {
-			return have_middlename.values().length;
-		} else if (name.equals("firstname_startend_sameletter")) {
-			return firstname_startend_sameletter.values().length;
-		} else if (name.equals("firstname_alphabetical_before_lastname")) {
-			return firstname_alphabetical_before_lastname.values().length;
-		} else if (name.equals("firstname_2ndletter_vowel")) {
-			return firstname_2ndletter_vowel.values().length;
-		} else if (name.equals("lastname_numLetters_even")) {
-			return lastname_numLetters_even.values().length;
-		}
-		return outcome.values().length;
-	}*/
+	
 }

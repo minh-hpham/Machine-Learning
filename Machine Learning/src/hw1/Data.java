@@ -12,4 +12,12 @@ public class Data {
 	public void setAttributes(ArrayList<HwAttribute> data_attributes) {
 		this.attributes = data_attributes;
 	}
+	public HwAttribute getAttribute (String name) {
+		for (int i = 0; i < attributes.size(); i++ ) {
+			if (attributes.get(i).getName().equals(name)) {
+				return attributes.get(i);
+			}
+		}
+		return null;
+	}
 }
