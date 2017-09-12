@@ -77,4 +77,16 @@ public class Node {
 	public HwAttribute getAttribute() {
 		return label;
 	}
+	public int maxDepth() {
+		if (this.getChildren().isEmpty()) {
+			return 1;
+		}
+		int max = 0;
+		for (int i = 0; i < children.size(); i++) {
+			int childDepth = children.get(i).maxDepth();
+			max = childDepth > max ? childDepth : max ; 
+		}
+		return 1 + max;
+		
+	}
 }

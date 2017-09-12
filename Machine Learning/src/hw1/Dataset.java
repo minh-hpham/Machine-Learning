@@ -7,9 +7,9 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 
 public class Dataset {
-	private static int positive = 0;
+	/*private static int positive = 0;
 	private static int datasize = 0;
-	public static ArrayList<Data> buildDatasetWithAttributes(InputStream in) {
+*/	public static ArrayList<Data> buildDatasetWithAttributes(InputStream in) {
 		BufferedReader reader = null;
 		ArrayList<Data> dataset = new ArrayList<Data>();
 
@@ -21,14 +21,14 @@ public class Dataset {
 			ArrayList<HwAttribute> data_attributes;
 			
 			while ((line = reader.readLine()) != null) {
-				datasize++;
+				//datasize++;
 				String[] st = line.toLowerCase().split("\\s+");
 				line_len = st.length;
 				data_attributes = new ArrayList<HwAttribute>();
 				data = new Data();
 				// data's label
 				if (st[0].equals("+")) {
-					positive++;
+					//positive++;
 					data_attributes.add(new HwAttribute("outcome", HwAttribute.positive));
 				} else {
 					data_attributes.add(new HwAttribute("outcome", HwAttribute.negative));
@@ -61,10 +61,14 @@ public class Dataset {
 				}
 				// 5. Is the second letter of their first name a vowel
 				// (a,e,i,o,u)?
-				if ("aeiou".indexOf(st[1].charAt(1)) < 0) {
-					data_attributes.add(new HwAttribute("firstname_2ndletter_vowel", HwAttribute.no));
+				if (st[1].length() > 1) {
+					if ("aeiou".indexOf(st[1].charAt(1)) < 0) {
+						data_attributes.add(new HwAttribute("firstname_2ndletter_vowel", HwAttribute.no));
+					} else {
+						data_attributes.add(new HwAttribute("firstname_2ndletter_vowel", HwAttribute.yes));
+					}
 				} else {
-					data_attributes.add(new HwAttribute("firstname_2ndletter_vowel", HwAttribute.yes));
+					data_attributes.add(new HwAttribute("firstname_2ndletter_vowel", HwAttribute.no));
 				}
 				// 6. Is the number of letters in their last name even?
 				if (st[line_len-1].length() % 2 == 0) {
@@ -127,10 +131,10 @@ public class Dataset {
 		}
 		return dataset;
 	}
-	public static int commonLabel() {
+	/*public static int commonLabel() {
 		if ((positive/datasize) > 0.5) {
 			return HwAttribute.positive;
 		}
 		return HwAttribute.negative;
-	}
+	}*/
 }
