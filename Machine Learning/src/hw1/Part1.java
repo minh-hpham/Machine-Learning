@@ -31,14 +31,6 @@ public class Part1 {
 		//part2(attributeSet);
 	}
 
-	private static void part1(HashMap<Integer, AttributeSet> attributeSet) throws FileNotFoundException {
-		
-	}
-
-	private static void part2(HashMap<Integer, AttributeSet> attributeSet) throws FileNotFoundException {
-		
-	}
-
 	public static double error(ArrayList<Data> dataset, Node root) {
 		int trainError = 0;
 		for (Data data : dataset) {
