@@ -13,10 +13,10 @@ public class Part2 {
 		HashMap<Integer, AttributeSet> attributeSet = Part1.getAllFeatures();
 		// set up data
 		InputStream in = new FileInputStream(new File(args[0]));
-		InputStream in0 = new FileInputStream(new File(args[1]));
-		InputStream in1 = new FileInputStream(new File(args[2]));
-		InputStream in2 = new FileInputStream(new File(args[3]));
-		InputStream in3 = new FileInputStream(new File(args[4]));
+		InputStream in0 = new FileInputStream(new File(args[2]));
+		InputStream in1 = new FileInputStream(new File(args[3]));
+		InputStream in2 = new FileInputStream(new File(args[4]));
+		InputStream in3 = new FileInputStream(new File(args[5]));
 
 		ArrayList<Data> dataset0 = Dataset.buildDatasetWithAttributes(in0);
 		ArrayList<Data> dataset1 = Dataset.buildDatasetWithAttributes(in1);
@@ -28,8 +28,11 @@ public class Part2 {
 		Tree t = new Tree();
 		root = new Node();
 		root.setAttribute(new HwAttribute("outcome", -1));
-
-		int[] depth = new int[] { 1, 2, 3, 4, 5, 10, 15, 20 };
+		int[] depth = new int[args.length - 6 + 1];
+		for (int i = 6; i < args.length; i++) {
+			depth[i-6] = Integer.parseInt(args[i]);
+		}
+	
 		for (int i = 0; i < depth.length; i++) {
 			double[] errors = new double[4];
 			// test is dataset0
