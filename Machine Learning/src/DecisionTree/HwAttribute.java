@@ -1,4 +1,4 @@
-package hw1;
+package DecisionTree;
 // Specifies features for the badges dataset
 public class HwAttribute extends Attribute {
 	

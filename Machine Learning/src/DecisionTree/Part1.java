@@ -1,4 +1,4 @@
-package hw1;
+package DecisionTree;
 
 import java.io.File;
 import java.io.FileInputStream;

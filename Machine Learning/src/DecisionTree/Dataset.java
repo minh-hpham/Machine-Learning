@@ -1,5 +1,5 @@
 
-package hw1;
+package DecisionTree;
 
 import java.io.BufferedReader;
 import java.io.IOException;

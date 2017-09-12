@@ -1,4 +1,4 @@
-package hw1;
+package DecisionTree;
 
 public class Attribute {
 	private String name;

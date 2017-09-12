@@ -1,4 +1,4 @@
-package hw1;
+package DecisionTree;
 
 import java.util.ArrayList;
 import java.util.HashMap;
