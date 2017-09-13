@@ -12,7 +12,7 @@ public class Part2 {
 	public static void main(String[] args) throws FileNotFoundException {
 		HashMap<Integer, AttributeSet> attributeSet = Part1.getAllFeatures();
 		// set up data
-		InputStream in = new FileInputStream(new File(args[0]));
+		ArrayList<Data> train = Dataset.buildDatasetWithAttributes(new FileInputStream(new File(args[0])));
 		InputStream in0 = new FileInputStream(new File(args[2]));
 		InputStream in1 = new FileInputStream(new File(args[3]));
 		InputStream in2 = new FileInputStream(new File(args[4]));
@@ -33,8 +33,10 @@ public class Part2 {
 			depth[i-6] = Integer.parseInt(args[i]);
 		}
 		
+		double maxAccuracy = 0;
+		int maxDepth = 0;
 		for (int i = 0; i < depth.length; i++) {
-			double[] errors = new double[4];
+			double[] accuracies = new double[4];
 			// test is dataset0
 			System.out.println("At depth :" + depth[i]);
 			combine.clear();
@@ -45,8 +47,7 @@ public class Part2 {
 			combine.addAll(dataset3);
 			int commonLabel = Tree.majorityLabel(combine, HwAttribute.outcome.values().length);
 			root = t.buildTree(combine, attributeSet, commonLabel, root, depth[i]);
-			errors[0] = Part1.error(dataset0, root);
-			System.out.println("Error for test set at updated_training00.txt: " + errors[0]);
+			accuracies[0] = 100-Part1.error(dataset0, root);
 
 			// test is dataset1
 			combine.clear();
@@ -56,8 +57,7 @@ public class Part2 {
 
 			commonLabel = Tree.majorityLabel(combine, HwAttribute.outcome.values().length);
 			root = t.buildTree(combine, attributeSet, commonLabel, root, depth[i]);
-			errors[1] = Part1.error(dataset1, root);
-			System.out.println("Error for test set at updated_training01.txt: " + errors[1]);
+			accuracies[1] = 100-Part1.error(dataset1, root);
 
 			// test is dataset2
 			combine.clear();
@@ -67,8 +67,7 @@ public class Part2 {
 
 			commonLabel = Tree.majorityLabel(combine, HwAttribute.outcome.values().length);
 			root = t.buildTree(combine, attributeSet, commonLabel, root, depth[i]);
-			errors[2] = Part1.error(dataset2, root);
-			System.out.println("Error for test set at updated_training02.txt: " + errors[2]);
+			accuracies[2] = 100-Part1.error(dataset2, root);
 
 			// test is dataset3
 			combine.clear();
@@ -78,11 +77,32 @@ public class Part2 {
 
 			commonLabel = Tree.majorityLabel(combine, HwAttribute.outcome.values().length);
 			root = t.buildTree(combine, attributeSet, commonLabel, root, depth[i]);
-			errors[3] = Part1.error(dataset3, root);
-			System.out.println("Error for test set at updated_training03.txt: " + errors[3]);
+			accuracies[3] = 100-Part1.error(dataset3, root);
+			
+			double avg = 0;
+			for (int j = 0; j < accuracies.length; j++) {
+				avg += accuracies[j];
+			}
+			avg = avg/accuracies.length;
+			System.out.println("Average Accuracy: " + avg);
+			double sd = Part1.sd(accuracies);
 
-			System.out.println("Standard deviation: " + Part1.sd(errors));
+			System.out.println("Standard deviation: " + sd);
+			if (avg > maxAccuracy) {
+				maxAccuracy = avg;
+				maxDepth = depth[i];
+			}
 		}
+		System.out.println("Best Average Accuracy: " + maxAccuracy);
+		System.out.println("Optimum depth: " + maxDepth);
+		
+		root.setAttribute(new HwAttribute("outcome", -1));
+		int commonLabel = Tree.majorityLabel(train, HwAttribute.outcome.values().length);
+		root = t.buildTree(train, attributeSet, commonLabel, root,maxDepth);
+		double testError = Part1.error(test, root);
+		System.out.println("Accuracy for test set: "+ (100 - testError));
+		System.out.println("Error for test set: "+ testError);
+		System.out.println("Depth = " + root.maxDepth());
 		
 
 	}

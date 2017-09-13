@@ -20,12 +20,14 @@ public class Part1 {
 		root.setAttribute(new HwAttribute("outcome", -1));
 		int commonLabel = Tree.majorityLabel(dataset, HwAttribute.outcome.values().length);
 		Tree t = new Tree();
-		root = t.buildTree(dataset, attributeSet, commonLabel, root,15);
-		System.out.println("Max Depth = " + root.maxDepth());
-		double trainError = error(dataset, root);
-		System.out.println("Error for training set: "+ trainError);
+		root = t.buildTree(dataset, attributeSet, commonLabel, root);
+				
 		double testError = error(testset, root);
+		System.out.println("Accuracy for test set: "+ (100 - testError));
 		System.out.println("Error for test set: "+ testError);
+		System.out.println("Depth = " + root.maxDepth());
+		
+		
 	}
 
 	public static double error(ArrayList<Data> dataset, Node root) {
