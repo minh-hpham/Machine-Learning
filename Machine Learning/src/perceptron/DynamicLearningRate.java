@@ -1,17 +1,15 @@
 package perceptron;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Random;
+/*
+ * UPDATE LEARNING RATE AT EACH EPOCH
+ */
+public class DynamicLearningRate extends Perceptron{
 
-public class SimplePerceptron extends Perceptron {
 	public static void main(String[] args) throws FileNotFoundException {
 		ArrayList<double[]> training00 = parseString(new FileInputStream(new File(args[0])));
 		ArrayList<double[]> training01 = parseString(new FileInputStream(new File(args[1])));
@@ -28,9 +26,9 @@ public class SimplePerceptron extends Perceptron {
 		trainings.add(training02);
 		trainings.add(training03);
 		trainings.add(training04);
-
+		
 		double[] initial_weights = initialWeight(numberOfFeatures + 1); // include // bias
-																		
+		
 		// Run cross validation for ten epochs for each hyper-parameter
 		// combination to get the best hyper-parameter setting
 		int bestL_rate = findBestLearningRate(trainings, initial_weights, learning_rate, 10);
@@ -42,7 +40,8 @@ public class SimplePerceptron extends Perceptron {
 		System.out.println(String.format(" Test set accuracy: %f", 100 * (1 - (double) (testError / test.size()))));
 
 	}
-	protected static double[] trainWeightsWithBestHyperparameter(double[] weights, ArrayList<double[]> dataset,
+
+	private static double[] trainWeightsWithBestHyperparameter(double[] initial_weights, ArrayList<double[]> dataset,
 			ArrayList<double[]> developmentSet, double hyperparameter, int epoch) {
 		double[] accuracy = new double[epoch];
 		int update = 0;
@@ -51,9 +50,10 @@ public class SimplePerceptron extends Perceptron {
 		double[] devWeights = null;		
 		
 		int bestEpoch = -1;
-		for (int e = 0; e < 20; e++) {			
+		for (int e = 0; e < 20; e++) {	
+			hyperparameter = hyperparameter/(1+1+e);
 			Collections.shuffle(dataset);
-			devWeights = weights;
+			devWeights = initial_weights;
 			for (double[] data : dataset) {
 				if (predict(data, devWeights)) {
 					devWeights = update(data, devWeights, hyperparameter);
@@ -78,17 +78,19 @@ public class SimplePerceptron extends Perceptron {
 		
 		return bestWeights;
 	}
-	protected static int findBestLearningRate(ArrayList<ArrayList<double[]>> trainings, double[] weights,
-			double[] learning_rate, int epoch) {
+
+	private static int findBestLearningRate(ArrayList<ArrayList<double[]>> trainings, double[] initial_weights,
+			double[] learningRate, int epoch) {
 		int bestIndex = 0;
 		int minError = Integer.MAX_VALUE;
 		int size = trainings.size();
 		ArrayList<double[]> dataset = null;
 		for (int l_rate = 1; l_rate < learning_rate.length; l_rate++) {
-			
-			double[] thisWeights = weights;
+			double rate = learning_rate[l_rate];
+			double[] thisWeights = initial_weights;
 			// run n-1 epoch times. don't count error
-			for (int e = 0; e < epoch-1; e++) {
+			for (int e = 1; e < epoch; e++) {
+				rate = rate/(1+e);
 				for (int index = 0; index < size; index++) {
 					 dataset = new ArrayList<>();
 					for (int i = 0; i < size; i++) {
@@ -96,12 +98,13 @@ public class SimplePerceptron extends Perceptron {
 							dataset.addAll(trainings.get(i));
 						}
 					}
-					thisWeights = trainWeights(dataset, thisWeights, learning_rate[l_rate]);
+					thisWeights = trainWeights(dataset, thisWeights, rate);
 				}
 			}
 			
 			// run last epoch. count error
-			thisWeights = weights;
+			rate = rate/(1+epoch);
+			thisWeights = initial_weights;
 			int totalError = 0;
 			for (int index = 0; index < size; index++) {
 				dataset = new ArrayList<>();
@@ -110,7 +113,7 @@ public class SimplePerceptron extends Perceptron {
 						dataset.addAll(trainings.get(i));
 					}
 				}
-				thisWeights = trainWeights(dataset, thisWeights, learning_rate[l_rate]);
+				thisWeights = trainWeights(dataset, thisWeights, rate);
 				totalError += errors(trainings.get(index), thisWeights);
 			}
 			
@@ -125,6 +128,5 @@ public class SimplePerceptron extends Perceptron {
 		System.out.println(String.format("The cross-validation accuracy for the best hyperparameter: %f", accuracy));
 		return bestIndex;
 	}
-	
 
 }
