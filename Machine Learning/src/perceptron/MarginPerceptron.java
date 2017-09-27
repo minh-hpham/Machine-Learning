@@ -29,103 +29,99 @@ public class MarginPerceptron extends Perceptron{
 		
 		// Run cross validation for ten epochs for each hyper-parameter
 		// combination to get the best hyper-parameter setting
-		int bestL_rate = findBestLearningRate(trainings, initial_weights, learning_rate,margins, 10);
-		double bestMargin = 0.1;
+		double[] bestRates = findBestLearningRate(trainings, initial_weights, learning_rate,margins, 10);
+		double bestLearningRate = bestRates[0];
+		double bestMargin = bestRates[1];
 		// Train the classifier for 20 epochs
-		double[] bestWeights = trainWeightsWithBestHyperparameter(initial_weights,dataset,developmentSet,learning_rate[bestL_rate],20);
+		double[] bestWeights = trainWeightsWithBestHyperparameter(initial_weights,dataset,developmentSet,bestLearningRate,bestMargin,20);
 		// Evaluate the test set
 		int testError = errors(test, bestWeights,bestMargin);
-		System.out.println(String.format(" Test set accuracy: %f", 100 * (1 - (double) (testError / test.size()))));
+		System.out.println(String.format("Test set accuracy: %f", 100 * (1 -((double)testError / (double)test.size()))));
 
 	}
 
-	private static int findBestLearningRate(ArrayList<ArrayList<double[]>> trainings, double[] initial_weights,
-			double[] learningRate, double[] margins2, int epoch) {
-		double margin = margins2[0];
-		
-		int bestIndex = 0;
+	private static double[] findBestLearningRate(ArrayList<ArrayList<double[]>> trainings, double[] initial_weights,
+			double[] learningRate, double[] margins, int epoch) {
+		double bestMargin = -1;
+		double bestLearningRate = -1;
 		int minError = Integer.MAX_VALUE;
 		int size = trainings.size();
 		ArrayList<double[]> dataset = null;
 		for (int l_rate = 1; l_rate < learning_rate.length; l_rate++) {
 			double rate = learning_rate[l_rate];
-			double[] thisWeights = initial_weights;
-			// run n-1 epoch times. don't count error
-			for (int e = 1; e < epoch; e++) {
-				rate = rate/(1+e);
+			double margin;
+			for (int m = 0; m < margins.length; m++) {
+				margin = margins[m];
+				// run n-1 epoch times. don't count error
+				for (int e = 1; e < epoch; e++) {
+					rate = rate / (1 + e);
+					for (int index = 0; index < size; index++) {
+						dataset = new ArrayList<>();
+						for (int i = 0; i < size; i++) {
+							if (i != index) {
+								dataset.addAll(trainings.get(i));
+							}
+						}
+						initial_weights = trainWeights(dataset, initial_weights, rate, margin);
+					}
+				}
+				// run last epoch. count error
+				rate = rate / (1 + epoch);
+				int totalError = 0;
 				for (int index = 0; index < size; index++) {
-					 dataset = new ArrayList<>();
+					dataset = new ArrayList<>();
 					for (int i = 0; i < size; i++) {
 						if (i != index) {
 							dataset.addAll(trainings.get(i));
 						}
 					}
-					thisWeights = trainWeights(dataset, thisWeights, rate,margin);
+					initial_weights = trainWeights(dataset, initial_weights, rate, margin);
+					totalError += errors(trainings.get(index), initial_weights, margin);
 				}
-			}
-			
-			// run last epoch. count error
-			rate = rate/(1+epoch);
-			thisWeights = initial_weights;
-			int totalError = 0;
-			for (int index = 0; index < size; index++) {
-				dataset = new ArrayList<>();
-				for (int i = 0; i < size; i++) {
-					if (i != index) {
-						dataset.addAll(trainings.get(i));
-					}
-				}
-				thisWeights = trainWeights(dataset, thisWeights, rate,margin);
-				totalError += errors(trainings.get(index), thisWeights,margin);
-			}
-			
-			if (totalError < minError) {
-				minError = totalError;
-				bestIndex = l_rate;
+				if (totalError < minError) {
+					minError = totalError;
+					bestMargin = margin;
+					bestLearningRate = learning_rate[l_rate];
+				} 
 			}
 		}
 		int trainingsSize = dataset.size() + trainings.get(size-1).size();
-		double accuracy = 100 * (1 - (minError/trainingsSize));
-		System.out.println(String.format("The best hyper-parameters: %f", learning_rate[bestIndex]));
+		double accuracy = 100 * (1 - ((double)minError/(double)trainingsSize));
+		System.out.println(String.format("The best hyper-parameter: %f", bestLearningRate));
+		System.out.println(String.format("The best margin: %f", bestMargin));
 		System.out.println(String.format("The cross-validation accuracy for the best hyperparameter: %f", accuracy));
-		return bestIndex;
+		return new double[]{bestLearningRate,bestMargin};
 	}
 
-	private static double[] trainWeightsWithBestHyperparameter(double[] initial_weights, ArrayList<double[]> dataset,
-			ArrayList<double[]> developmentSet, double hyperparameter, int epoch) {
-		double margin =0.1;
+	private static double[] trainWeightsWithBestHyperparameter(double[] devWeights, ArrayList<double[]> dataset,
+			ArrayList<double[]> developmentSet, double hyperparameter, double bestMargin, int epoch) {
 		double[] accuracy = new double[epoch];
 		int update = 0;
 		int minDevError = Integer.MAX_VALUE;
 		double[] bestWeights = null;
-		double[] devWeights = null;		
 		
-		int bestEpoch = -1;
 		for (int e = 0; e < 20; e++) {	
 			hyperparameter = hyperparameter/(1+1+e);
 			Collections.shuffle(dataset);
-			devWeights = initial_weights;
 			for (double[] data : dataset) {
-				if (predict(data, devWeights,margin)) {
+				if (predict(data, devWeights,bestMargin)) {
 					devWeights = update(data, devWeights, hyperparameter);
 					update++;
 				}
 			}
-			int error = errors(developmentSet, devWeights,margin);
+			int error = errors(developmentSet, devWeights,bestMargin);
 			accuracy[e] = 100 - 100*((double)error / (double)developmentSet.size());
 			if (error < minDevError) {
 				minDevError = error;
 				bestWeights = devWeights;
-				bestEpoch = e;
 			}
 		}
-		System.out.println(String.format("Best epoch: %d",bestEpoch));
 		System.out.println(String.format("The total number of updates the learning algorithm performs on the training set: %d", update));
-		System.out.println("3f: Data for graph");
+		System.out.println("Development set accuracy:");
+		System.out.println("Epoch:\tAccuracy:");
 		for (int i = 0; i < epoch; i++) {
 			System.out.println(String.format("%d\t%f", i+1,accuracy[i]));
 		}
-		System.out.println(String.format("Development set accuracy: %f", accuracy[bestEpoch]));
 		
 		return bestWeights;
 	}

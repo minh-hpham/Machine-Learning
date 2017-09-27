@@ -5,10 +5,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Collections;
-/*
- * UPDATE LEARNING RATE AT EACH EPOCH
- */
-public class DynamicLearningRate extends Perceptron{
+
+public class AveragePerceptron extends Perceptron {
 
 	public static void main(String[] args) throws FileNotFoundException {
 		ArrayList<double[]> training00 = parseString(new FileInputStream(new File(args[0])));
@@ -26,66 +24,72 @@ public class DynamicLearningRate extends Perceptron{
 		trainings.add(training02);
 		trainings.add(training03);
 		trainings.add(training04);
-		
-		double[] initial_weights = initialWeight(numberOfFeatures + 1); // include // bias
+		// include bias
+		double[] initial_weights = initialWeight(numberOfFeatures + 1);
 		
 		// Run cross validation for ten epochs for each hyper-parameter
 		// combination to get the best hyper-parameter setting
 		int bestL_rate = findBestLearningRate(trainings, initial_weights, learning_rate, 10);
 
 		// Train the classifier for 20 epochs
-		double[] bestWeights = trainWeightsWithBestHyperparameter(initial_weights,dataset,developmentSet,learning_rate[bestL_rate],20);
+		double[] bestWeights = trainWeightsWithBestHyperparameter(initial_weights, dataset, developmentSet,
+				learning_rate[bestL_rate], 20);
 		// Evaluate the test set
 		int testError = errors(test, bestWeights);
-		System.out.println(String.format("Test set accuracy: %f", 100 * (1 -  ((double)testError / (double)test.size()))));
+		System.out.println(
+				String.format("Test set accuracy: %f", 100 * (1 - ((double) testError / (double) test.size()))));
 	}
 
-	private static double[] trainWeightsWithBestHyperparameter(double[] devWeights, ArrayList<double[]> dataset,
+	private static double[] trainWeightsWithBestHyperparameter(double[] weights, ArrayList<double[]> dataset,
 			ArrayList<double[]> developmentSet, double hyperparameter, int epoch) {
+		double[] average_weights = new double[numberOfFeatures + 1];
 		double[] accuracy = new double[epoch];
-		int totalUpdate = 0;
 		int update = 0;
-		int minDevError = Integer.MAX_VALUE;
+		int totalUpdate = 0;
+		double maxAccuracy = -1;
 		double[] bestWeights = null;
-		
-		for (int e = 0; e < 20; e++) {	
-			hyperparameter = hyperparameter/(1+1+e);
+		for (int e = 0; e < 20; e++) {			
 			Collections.shuffle(dataset);
 			for (double[] data : dataset) {
-				if (predict(data, devWeights)) {
-					devWeights = update(data, devWeights, hyperparameter);
+				if (predict(data, weights)) {
+					weights = update(data, weights, hyperparameter);
 					update++;
 				}
+				// update averaged weights
+				for (int i = 0; i < weights.length; i++) {
+					average_weights[i] += weights[i];
+				}
 			}
-			int error = errors(developmentSet, devWeights);
-			accuracy[e] = 100 - 100*((double)error / (double)developmentSet.size());
-			if (error < minDevError) {
-				minDevError = error;
-				bestWeights = devWeights;
+			int error = errors(developmentSet, average_weights);
+			double eAccuracy = 100 - 100*((double)error / (double)developmentSet.size());
+			accuracy[e] = eAccuracy;
+			if (eAccuracy > maxAccuracy) {
+				maxAccuracy = eAccuracy;
+				bestWeights = average_weights;
 				totalUpdate = update;
 			}
 		}
 		System.out.println(String.format("The total number of updates the learning algorithm performs on the training set: %d", totalUpdate));
-		System.out.println("Development set accuracy:");
+		System.out.println("Development set accuracy");
 		System.out.println("Epoch:\tAccuracy:");
 		for (int i = 0; i < epoch; i++) {
 			System.out.println(String.format("%d\t%f", i+1,accuracy[i]));
 		}
+		//System.out.println(String.format("Development set accuracy: %f", maxAccuracy));
+		
 		return bestWeights;
+		
 	}
 
-	private static int findBestLearningRate(ArrayList<ArrayList<double[]>> trainings, double[] initial_weights,
-			double[] learningRate, int epoch) {
+	private static int findBestLearningRate(ArrayList<ArrayList<double[]>> trainings, double[] weights,
+			double[] learning_rate, int epoch) {
 		int bestIndex = 0;
 		int minError = Integer.MAX_VALUE;
 		int size = trainings.size();
 		ArrayList<double[]> dataset = null;
 		for (int l_rate = 1; l_rate < learning_rate.length; l_rate++) {
-			double rate = learning_rate[l_rate];
-			
 			// run n-1 epoch times. don't count error
-			for (int e = 1; e < epoch; e++) {
-				rate = rate/(1+e);
+			for (int e = 0; e < epoch-1; e++) {
 				for (int index = 0; index < size; index++) {
 					 dataset = new ArrayList<>();
 					for (int i = 0; i < size; i++) {
@@ -93,12 +97,11 @@ public class DynamicLearningRate extends Perceptron{
 							dataset.addAll(trainings.get(i));
 						}
 					}
-					initial_weights = trainWeights(dataset, initial_weights, rate);
+					weights = trainWeights(dataset, weights, learning_rate[l_rate]);
 				}
 			}
 			
 			// run last epoch. count error
-			rate = rate/(1+epoch);
 			int totalError = 0;
 			for (int index = 0; index < size; index++) {
 				dataset = new ArrayList<>();
@@ -107,8 +110,8 @@ public class DynamicLearningRate extends Perceptron{
 						dataset.addAll(trainings.get(i));
 					}
 				}
-				initial_weights = trainWeights(dataset, initial_weights, rate);
-				totalError += errors(trainings.get(index), initial_weights);
+				weights = trainWeights(dataset, weights, learning_rate[l_rate]);
+				totalError += errors(trainings.get(index), weights);
 			}
 			
 			if (totalError < minError) {
