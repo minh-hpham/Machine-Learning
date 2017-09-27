@@ -74,13 +74,15 @@ public class DynamicLearningRate extends Perceptron{
 		return bestWeights;
 	}
 
-	private static int findBestLearningRate(ArrayList<ArrayList<double[]>> trainings, double[] initial_weights,
+	private static int findBestLearningRate(ArrayList<ArrayList<double[]>> trainings, double[] devWeights,
 			double[] learningRate, int epoch) {
 		int bestIndex = 0;
 		int minError = Integer.MAX_VALUE;
 		int size = trainings.size();
+		double[] initial_weights = null;
 		ArrayList<double[]> dataset = null;
 		for (int l_rate = 1; l_rate < learning_rate.length; l_rate++) {
+			initial_weights = devWeights;
 			double rate = learning_rate[l_rate];
 			
 			// run n-1 epoch times. don't count error

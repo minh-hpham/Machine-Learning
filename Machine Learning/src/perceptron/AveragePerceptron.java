@@ -81,13 +81,15 @@ public class AveragePerceptron extends Perceptron {
 		
 	}
 
-	private static int findBestLearningRate(ArrayList<ArrayList<double[]>> trainings, double[] weights,
+	private static int findBestLearningRate(ArrayList<ArrayList<double[]>> trainings, double[] devWeights,
 			double[] learning_rate, int epoch) {
 		int bestIndex = 0;
 		int minError = Integer.MAX_VALUE;
 		int size = trainings.size();
+		double[] weights = null;
 		ArrayList<double[]> dataset = null;
 		for (int l_rate = 1; l_rate < learning_rate.length; l_rate++) {
+			weights = devWeights;
 			// run n-1 epoch times. don't count error
 			for (int e = 0; e < epoch-1; e++) {
 				for (int index = 0; index < size; index++) {

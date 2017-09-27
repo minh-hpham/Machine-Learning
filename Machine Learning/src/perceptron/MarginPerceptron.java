@@ -40,14 +40,16 @@ public class MarginPerceptron extends Perceptron{
 
 	}
 
-	private static double[] findBestLearningRate(ArrayList<ArrayList<double[]>> trainings, double[] initial_weights,
+	private static double[] findBestLearningRate(ArrayList<ArrayList<double[]>> trainings, double[] devWeights,
 			double[] learningRate, double[] margins, int epoch) {
 		double bestMargin = -1;
 		double bestLearningRate = -1;
 		int minError = Integer.MAX_VALUE;
 		int size = trainings.size();
+		double [] initial_weights = null;
 		ArrayList<double[]> dataset = null;
 		for (int l_rate = 1; l_rate < learning_rate.length; l_rate++) {
+			initial_weights = devWeights;
 			double rate = learning_rate[l_rate];
 			double margin;
 			for (int m = 0; m < margins.length; m++) {
