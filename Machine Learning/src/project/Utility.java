@@ -9,7 +9,7 @@ import java.util.Collections;
 import java.util.Random;
 
 public class Utility {
-	protected final static int numberOfFeatures = 69;
+	protected final static int numberOfFeatures = 16;
 	protected final static double[] learning_rate = { 1, 0.1, 0.01 };
 
 	protected static double[] trainWeights(ArrayList<double[]> dataset, double[] weights, double rate) {
