@@ -9,21 +9,25 @@ import java.util.Collections;
 public class Project extends Utility {
 
 	public static void main(String[] args) throws FileNotFoundException {
+		// 4 file for training
+		// 1 for development set
 		ArrayList<double[]> training00 = parseString(new FileInputStream(new File(args[0])));
 		ArrayList<double[]> training01 = parseString(new FileInputStream(new File(args[1])));
 		ArrayList<double[]> training02 = parseString(new FileInputStream(new File(args[2])));
 		ArrayList<double[]> training03 = parseString(new FileInputStream(new File(args[3])));
-		ArrayList<double[]> training04 = parseString(new FileInputStream(new File(args[4])));
-		ArrayList<double[]> dataset = parseString(new FileInputStream(new File(args[5])));
-		ArrayList<double[]> developmentSet = parseString(new FileInputStream(new File(args[6])));
-		ArrayList<double[]> test = parseString(new FileInputStream(new File(args[7])));
+		ArrayList<double[]> developmentSet = parseString(new FileInputStream(new File(args[4])));
+		
+		ArrayList<double[]> training = parseString(new FileInputStream(new File(args[5])));
+
+		ArrayList<double[]> test = parseString(new FileInputStream(new File(args[6])));
+		ArrayList<Integer> testID = parseID(new FileInputStream(new File(args[7])));
 
 		ArrayList<ArrayList<double[]>> trainings = new ArrayList<>();
 		trainings.add(training00);
 		trainings.add(training01);
 		trainings.add(training02);
 		trainings.add(training03);
-		trainings.add(training04);
+
 		// include bias
 		double[] initial_weights = initialWeight(numberOfFeatures + 1);
 		
@@ -32,12 +36,15 @@ public class Project extends Utility {
 		int bestL_rate = findBestLearningRate(trainings, initial_weights, learning_rate, 10);
 
 		// Train the classifier for 20 epochs
-		double[] bestWeights = trainWeightsWithBestHyperparameter(initial_weights, dataset, developmentSet,
+		double[] bestWeights = trainWeightsWithBestHyperparameter(initial_weights, training, developmentSet,
 				learning_rate[bestL_rate], 20);
 		// Evaluate the test set
 		int testError = errors(test, bestWeights);
 		System.out.println(
 				String.format("Test set accuracy: %f", 100 * (1 - ((double) testError / (double) test.size()))));
+		
+		// write to csv
+		writeToCSV(bestWeights,testID,test,"result.csv");
 	}
 
 	private static double[] trainWeightsWithBestHyperparameter(double[] weights, ArrayList<double[]> dataset,
