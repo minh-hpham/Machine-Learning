@@ -11,11 +11,37 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Random;
+import java.util.TreeMap;
 
 public class Utility {
 	protected final static int numberOfFeatures = 16;
 	protected final static double[] learning_rate = { 1, 0.1, 0.01 };
+
+	protected static void estimateFeature(ArrayList<double[]> input) {
+		Map<Double, Integer> map = new TreeMap<Double,Integer>();
+		int l = input.size();
+		double key;
+		int val;
+		double one = 0;
+		for (int i = 0; i < l; i++) {
+			if (input.get(i)[0] == one) {
+				key = input.get(i)[16];
+				if (map.containsKey(key)) {
+					val = map.get(key);
+					map.put(key, val + 1);
+				} else {
+					map.put(key, 1);
+				}
+			}
+		}
+
+		for (Double k : map.keySet()) {
+			System.out.println(String.format("%f %d", k, map.get(k)));
+		}
+
+	}
 
 	protected static double[] trainWeights(ArrayList<double[]> dataset, double[] weights, double rate) {
 		for (double[] data : dataset) {
