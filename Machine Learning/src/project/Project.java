@@ -19,34 +19,34 @@ public class Project extends Utility {
 		
 		ArrayList<double[]> training = parseString(new FileInputStream(new File(args[5])));
 		// count feature
-		estimateFeature(training);
+		//estimateFeature(training);
 		
-//		ArrayList<double[]> test = parseString(new FileInputStream(new File(args[6])));
-//		ArrayList<Integer> testID = parseID(new FileInputStream(new File(args[7])));
-//
-//		ArrayList<ArrayList<double[]>> trainings = new ArrayList<>();
-//		trainings.add(training00);
-//		trainings.add(training01);
-//		trainings.add(training02);
-//		trainings.add(training03);
-//
-//		// include bias
-//		double[] initial_weights = initialWeight(numberOfFeatures + 1);
-//		
-//		// Run cross validation for ten epochs for each hyper-parameter
-//		// combination to get the best hyper-parameter setting
-//		int bestL_rate = findBestLearningRate(trainings, initial_weights, learning_rate, 10);
-//
-//		// Train the classifier for 20 epochs
-//		double[] bestWeights = trainWeightsWithBestHyperparameter(initial_weights, training, developmentSet,
-//				learning_rate[bestL_rate], 20);
-//		// Evaluate the test set
-//		int testError = errors(test, bestWeights);
-//		System.out.println(
-//				String.format("Test set accuracy: %f", 100 * (1 - ((double) testError / (double) test.size()))));
-//		
-//		// write to csv
-//		writeToCSV(bestWeights,testID,test,"result.csv");
+		ArrayList<double[]> test = parseString(new FileInputStream(new File(args[6])));
+		ArrayList<Integer> testID = parseID(new FileInputStream(new File(args[7])));
+
+		ArrayList<ArrayList<double[]>> trainings = new ArrayList<>();
+		trainings.add(training00);
+		trainings.add(training01);
+		trainings.add(training02);
+		trainings.add(training03);
+
+		// include bias
+		double[] initial_weights = initialWeight(numberOfFeatures + 1);
+		
+		// Run cross validation for ten epochs for each hyper-parameter
+		// combination to get the best hyper-parameter setting
+		int bestL_rate = findBestLearningRate(trainings, initial_weights, learning_rate, 10);
+
+		// Train the classifier for 20 epochs
+		double[] bestWeights = trainWeightsWithBestHyperparameter(initial_weights, training, developmentSet,
+				learning_rate[bestL_rate], 20);
+		// Evaluate the test set
+		int testError = errors(test, bestWeights);
+		System.out.println(
+				String.format("Test set accuracy: %f", 100 * (1 - ((double) testError / (double) test.size()))));
+		
+		// write to csv
+		writeToCSV(bestWeights,testID,test,"result.csv");
 		
 
 	}

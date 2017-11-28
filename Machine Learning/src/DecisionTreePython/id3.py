@@ -1,11 +1,12 @@
 import math
 import numpy as np
 import project_features
+import csv
 
-f_train = "DatasetRetry/data-splits/data.train"
-f_test = "DatasetRetry/data-splits/data.eval.anon"
-
-f_cross = "Updated_Dataset/Updated_CVSplits/updated_training.txt"
+f_train = "DatasetRetry/data.train"
+f_test = "DatasetRetry/data.eval.anon"
+f_testID = "DatasetRetry/data.eval.id"
+f_cross = "DatasetRetry/data-splits/data.trainX"
 
 depths = {1, 2, 3, 4, 5, 10, 15, 20}
 
@@ -13,33 +14,34 @@ def main():
 
 	#The file contains information about the features
 	#Format -> Feature name:Values it can take (seperated by commas)
-	with open("info.txt") as f:
+	with open("DatasetRetry/info.txt") as f:
 	    data_info = f.readlines()
 
 	#Transform the data
-	data_train = featurization.featurize(f_train)
-	data_test = featurization.featurize(f_test)
+	data_train = project_features.featurize(f_train)
+	data_test = project_features.featurize(f_test)
 
 	#Create feature nodes
 	features = feature_info(data_info)
 
-	print("Accuracy on Train ", test(data_train, data_train, features, -1))
-	print("Accuracy on Test ", test(data_train, data_test, features, -1))
-
-	for depth in depths:
-		cross_validation(depth, features)
-	
+# 	print("Accuracy on Train ", test(data_train, data_train, features, -1))
+# 	print("Accuracy on Test ", test(data_train, data_test, features, -1))
+# 
+# 	for depth in depths:
+# 		cross_validation(depth, features)
+	writeToCSV(data_train, data_test, features, -1)
 def cross_validation(depth, features):
 	data = []
 	accs = []
 	for i in range(4):
 		indexs = [j for j in range(4)]
 		indexs.remove(i)
-		f_test = f_cross.replace(".", '0' + str(i) + '.')
-		data_t = featurization.featurize(f_test)
+# 		f_test = f_cross.replace(".", '0' + str(i) + '.')
+		f_test = f_cross.replace("X", str(i))
+		data_t = project_features.featurize(f_test)
 		data = []
 		for index in indexs:
-			data += featurization.featurize(f_cross.replace(".", '0' + str(index) + '.'))
+			data += project_features.featurize(f_cross.replace("X", str(index)))
 		accs.append(test(data, data_t, features, depth))
 	print("Depth ", depth, "Avg. Accuracy ", np.mean(accs), "Std. Deviation ", np.std(accs))
 
@@ -60,6 +62,30 @@ def walk_down(node, point, label):
 				return walk_down(b.child, point, label)
 	return 0
 
+def writeToCSV(data_train, data_test, features, depth):
+	r = ID3(data_train, features, 0, depth)
+	myData =[] # [['Id', 'Prediction']]  
+	with open(f_testID) as f:
+	    data = f.readlines()
+	for i, id in enumerate(data):
+		d = data_test[i]
+		myData.append([str(id),str(getValueFromNode(r,d[0]))])
+	myFile = open('enon.csv', 'wb')  
+	with myFile:  
+	   writer = csv.writer(myFile,dialect='excel')
+	   writer.writerow(['Id', 'Prediction'])
+	   writer.writerows(myData)
+	return 0
+
+def getValueFromNode(node,point):
+	if node.name == "leaf":
+		return node.value
+
+	if node.branches:
+		for b in node.branches:
+			if b.value == point[node.index]:
+				return getValueFromNode(b.child, point)
+			
 def ID3(data_samples, attributes, depth, depth_limit):
 
 	if not attributes or depth == depth_limit:
@@ -135,8 +161,8 @@ def calculate_base_entropy(data):
 
 	n = l - p
 
-	probP = p/l
-	probN = n/l
+	probP = float(p)/float(l)
+	probN = float(n)/float(l)
 
 	return (-probP*math.log(probP)) - (probN*math.log(probN))
 

@@ -1,8 +1,7 @@
-import six
 def featurize(fname):
 
 
-    with open(fname, encoding = "utf-8") as f:
+    with open(fname) as f:
         data = [line.rstrip() for line in f]
         
     new_data = []
@@ -12,13 +11,13 @@ def featurize(fname):
         d = d.split(" ")
         label = int(d[0])
 
-        a1 = int(d.split(":")[1])
-        a2 = int(d.split(":")[2])
-        a3 = int(d.split(":")[3])
-        a8 = int(d.split(":")[8])
-        a9 = int(d.split(":")[9])
-        a11 = float(d.split(":")[11])
-        a16 = float(d.split(":")[16])
+        a1 = int(d[1].split(":")[1])
+        a2 = int(d[2].split(":")[1])
+        a3 = int(d[3].split(":")[1])
+        a8 = int(d[8].split(":")[1])
+        a9 = float(d[9].split(":")[1])
+        a11 = float(d[11].split(":")[1])
+        a16 = float(d[16].split(":")[1])
         
         if a1 <= 7:
             one = 1
