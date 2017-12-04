@@ -1,131 +1,188 @@
 package homework5;
 
+import static java.util.Comparator.comparingDouble;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Random;
+import java.util.Set;
+import java.util.stream.IntStream;
 
 public class SVM extends Utility {
 
 	public static void main(String[] args) throws FileNotFoundException {
-		ArrayList<double[]> training00 = parseString(new FileInputStream(new File(args[0])));
-		ArrayList<double[]> training01 = parseString(new FileInputStream(new File(args[1])));
-		ArrayList<double[]> training02 = parseString(new FileInputStream(new File(args[2])));
-		ArrayList<double[]> training03 = parseString(new FileInputStream(new File(args[3])));
-		ArrayList<double[]> training04 = parseString(new FileInputStream(new File(args[4])));
-		ArrayList<double[]> dataset = parseString(new FileInputStream(new File(args[5])));
-		ArrayList<double[]> developmentSet = parseString(new FileInputStream(new File(args[6])));
-		ArrayList<double[]> test = parseString(new FileInputStream(new File(args[7])));
+		ArrayList<ArrayList<Integer>> training00 = featurize(new FileInputStream(new File(args[0])));
+		ArrayList<ArrayList<Integer>> training01 = featurize(new FileInputStream(new File(args[1])));
+		ArrayList<ArrayList<Integer>> training02 = featurize(new FileInputStream(new File(args[2])));
+		ArrayList<ArrayList<Integer>> training03 = featurize(new FileInputStream(new File(args[3])));
+		ArrayList<ArrayList<Integer>> training04 = featurize(new FileInputStream(new File(args[4])));
+		ArrayList<ArrayList<Integer>> train_data = featurize(new FileInputStream(new File(args[5])));
+		ArrayList<ArrayList<Integer>> test = featurize(new FileInputStream(new File(args[6])));
 
-		ArrayList<ArrayList<double[]>> trainings = new ArrayList<>();
-		trainings.add(training00);
-		trainings.add(training01);
-		trainings.add(training02);
-		trainings.add(training03);
-		trainings.add(training04);
+		ArrayList<ArrayList<ArrayList<Integer>>> cross_validation_data = new ArrayList<>();
+		cross_validation_data.add(training00);
+		cross_validation_data.add(training01);
+		cross_validation_data.add(training02);
+		cross_validation_data.add(training03);
+		cross_validation_data.add(training04);
 		// include bias
-		double[] initial_weights = initialWeight(numberOfFeatures + 1);
-		
-		// Run cross validation for ten epochs for each hyper-parameter
-		// combination to get the best hyper-parameter setting
-		int bestL_rate = findBestLearningRate(trainings, initial_weights, learning_rate, 10);
-
+		double[] learning_rates = new double[] { 10, 1, 0.1, 0.01, 0.001, 0.0001 };
+		double learning_rate = find_best_learning_rate(cross_validation_data, learning_rates);
+		System.out.println("Best learning rate: " + learning_rate);
+		double[] regularizations = new double[] { 10, 1, 0.1, 0.01, 0.001, 0.0001 };
+		double C = find_best_regularization(cross_validation_data, regularizations);
+		System.out.println("Best C: " + C);
+		// cross validation accuracy
+		System.out.println("Avg. Accuracy cross-validation " + cross_validataion(cross_validation_data, learning_rate, C));
 		// Train the classifier for 20 epochs
-		double[] bestWeights = trainWeightsWithBestHyperparameter(initial_weights, dataset, developmentSet,
-				learning_rate[bestL_rate], 20);
-		// Evaluate the test set
-		int testError = errors(test, bestWeights);
-		System.out.println(
-				String.format("Test set accuracy: %f", 100 * (1 - ((double) testError / (double) test.size()))));
+		HashMap<Integer, Double> weight = SupportVectorMachine(train_data, learning_rate, C);
+		System.out.println("Accuracy Train " + test(train_data, weight));
+		System.out.println("Accuracy Test "+ test(test,weight));
 	}
-
-	private static double[] trainWeightsWithBestHyperparameter(double[] weights, ArrayList<double[]> dataset,
-			ArrayList<double[]> developmentSet, double hyperparameter, int epoch) {
-		double[] average_weights = new double[numberOfFeatures + 1];
-		double[] accuracy = new double[epoch];
-		int update = 0;
-		int totalUpdate = 0;
-		double maxAccuracy = -1;
-		double[] bestWeights = null;
-		for (int e = 0; e < 20; e++) {			
-			Collections.shuffle(dataset);
-			for (double[] data : dataset) {
-				if (predict(data, weights)) {
-					weights = update(data, weights, hyperparameter);
-					update++;
-				}
-				// update averaged weights
-				for (int i = 0; i < weights.length; i++) {
-					average_weights[i] += weights[i];
+	private static HashMap<Integer, Double> train_weight(ArrayList<ArrayList<Integer>> train_data,
+			HashMap<Integer, Double> weight, double learning_rate, double regularization) {
+		Set<Integer> keys = weight.keySet();
+		int count = 0;
+		for (ArrayList<Integer> x_i : train_data) {
+			double sum = 0.0;
+			for (int i = 1; i < x_i.size(); i++) {
+				int key = x_i.get(i);
+				if (keys.contains(key)) {
+					sum += weight.get(key);
+				} else {
+					weight.put(key, 0.0);
 				}
 			}
-			int error = errors(developmentSet, average_weights);
-			double eAccuracy = 100 - 100*((double)error / (double)developmentSet.size());
-			accuracy[e] = eAccuracy;
-			if (eAccuracy > maxAccuracy) {
-				maxAccuracy = eAccuracy;
-				bestWeights = average_weights;
-				totalUpdate = update;
+			// update weight*(1-gamma)
+			for (Integer k : weight.keySet()) {
+				weight.put(k, weight.get(k) * (1 - learning_rate));
+			}
+			int y = x_i.get(0);
+			if (y * sum <= 1) {
+				for (int i = 1; i < x_i.size(); i++) {
+					int k = x_i.get(i);
+					double val = weight.get(k) + learning_rate * regularization * y * 1;
+					weight.put(k, val);
+				}
 			}
 		}
-		System.out.println(String.format("The total number of updates the learning algorithm performs on the training set: %d", totalUpdate));
-		System.out.println("Development set accuracy");
-		System.out.println("Epoch:\tAccuracy:");
-		for (int i = 0; i < epoch; i++) {
-			System.out.println(String.format("%d\t%f", i+1,accuracy[i]));
-		}
-		//System.out.println(String.format("Development set accuracy: %f", maxAccuracy));
-		
-		return bestWeights;
-		
+		return weight;
 	}
 
-	private static int findBestLearningRate(ArrayList<ArrayList<double[]>> trainings, double[] devWeights,
-			double[] learning_rate, int epoch) {
-		int bestIndex = 0;
-		int minError = Integer.MAX_VALUE;
-		int size = trainings.size();
-		double[] weights = null;
-		ArrayList<double[]> dataset = null;
-		for (int l_rate = 1; l_rate < learning_rate.length; l_rate++) {
-			weights = devWeights;
-			// run n-1 epoch times. don't count error
-			for (int e = 0; e < epoch-1; e++) {
-				for (int index = 0; index < size; index++) {
-					 dataset = new ArrayList<>();
-					for (int i = 0; i < size; i++) {
-						if (i != index) {
-							dataset.addAll(trainings.get(i));
-						}
-					}
-					weights = trainWeights(dataset, weights, learning_rate[l_rate]);
-				}
+	private static double cross_validataion(
+			ArrayList<ArrayList<ArrayList<Integer>>> cross_data,
+			double learning_rate, double regularization) {
+		ArrayList<ArrayList<Integer>> train_data;
+		double accs = 0.0;
+		ArrayList<Integer> indices = new ArrayList<Integer>(
+				Arrays.asList(0,1,2,3,4));
+		for (int i = 0; i < cross_data.size(); i++) {
+			// train_data
+			indices.remove(i);
+			train_data = new ArrayList<>();
+			for (int j : indices) {
+				train_data.addAll(cross_data.get(j));
 			}
-			
-			// run last epoch. count error
-			int totalError = 0;
-			for (int index = 0; index < size; index++) {
+			indices.add(i,i);
+			HashMap<Integer,Double>weight = SupportVectorMachine(train_data, 
+					learning_rate, regularization);
+			accs += test(cross_data.get(i),weight);
+		}
+
+		return accs/5;
+	}
+	private static HashMap<Integer, Double> SupportVectorMachine(ArrayList<ArrayList<Integer>> train_data,
+			double learning_rate, double c) {
+		HashMap<Integer, Double> weight = new HashMap<>();
+		weight.put(0, 0.0);
+		for (int epoch = 0; epoch < 20; epoch++) {
+			Collections.shuffle(train_data);
+			weight = train_weight(train_data, weight, learning_rate, c);
+		}
+		return weight;
+	}
+
+	private static double find_best_regularization(ArrayList<ArrayList<ArrayList<Integer>>> cross_validation_data,
+			double[] regularizations) {
+		double learning_rate = 0.0001;
+		ArrayList<Double> accs = new ArrayList<Double>();
+		HashMap<Integer, Double> weight = new HashMap<>();
+
+		ArrayList<ArrayList<Integer>> train_data = new ArrayList<ArrayList<Integer>>();
+		for (int i = 0; i < cross_validation_data.size(); i++) {
+			train_data.addAll(cross_validation_data.get(i));
+		}
+		for (double C : regularizations) {
+			// bias
+			weight.put(0, 0.0);
+			for (int epoch = 0; epoch < 5; epoch++) {
+				weight = train_weight(train_data, weight, learning_rate, C);
+			}
+			// cross-validation
+			ArrayList<ArrayList<Integer>> dataset;
+			double accuracy = 0.0;
+			ArrayList<Integer> indices = new ArrayList<Integer>(Arrays.asList(0, 1, 2, 3, 4));
+			for (int i = 0; i < cross_validation_data.size(); i++) {
+				// train_data
+				indices.remove(i);
 				dataset = new ArrayList<>();
-				for (int i = 0; i < size; i++) {
-					if (i != index) {
-						dataset.addAll(trainings.get(i));
-					}
+				for (int j : indices) {
+					dataset.addAll(cross_validation_data.get(j));
 				}
-				weights = trainWeights(dataset, weights, learning_rate[l_rate]);
-				totalError += errors(trainings.get(index), weights);
+				indices.add(i,i);
+				weight = train_weight(dataset, weight, learning_rate, C);
+				accuracy += test(cross_validation_data.get(i), weight);
 			}
-			
-			if (totalError < minError) {
-				minError = totalError;
-				bestIndex = l_rate;
-			}
+			accs.add(accuracy);
+			weight = new HashMap<>();
 		}
-		int trainingsSize = dataset.size() + trainings.get(size-1).size();
-		double accuracy = 100 * (1 - ((double)minError/(double)trainingsSize));
-		System.out.println(String.format("The best hyper-parameters: %f", learning_rate[bestIndex]));
-		System.out.println(String.format("The cross-validation accuracy for the best hyperparameter: %f", accuracy));
-		return bestIndex;
+		int maxIndex = IntStream.range(0, accs.size()).boxed().max(comparingDouble(accs::get)).get();
+		return regularizations[maxIndex];
 	}
 
+	private static double find_best_learning_rate(
+			ArrayList<ArrayList<ArrayList<Integer>>> cross_validation_data,
+			double[] learning_rates) {
+		double regularization = 0.1;
+		ArrayList<Double> accs = new ArrayList<Double>();
+		HashMap<Integer, Double> weight = new HashMap<>();
+
+		ArrayList<ArrayList<Integer>> train_data = 
+				new ArrayList<ArrayList<Integer>>();
+		for (int i = 0; i < cross_validation_data.size(); i++) {
+			train_data.addAll(cross_validation_data.get(i));
+		}
+		for (double learning_rate : learning_rates) {
+			weight.put(0, 0.0);
+			for (int epoch = 0; epoch < 5; epoch++) {
+				weight = train_weight(train_data, weight, 
+						learning_rate, regularization);
+			}
+			// cross-validation
+			ArrayList<ArrayList<Integer>> dataset;
+			double accuracy = 0.0;
+			ArrayList<Integer> indices = new ArrayList<Integer>(
+					Arrays.asList(0, 1, 2, 3, 4));
+			for (int i = 0; i < cross_validation_data.size(); i++) {
+				// train_data
+				indices.remove(i);
+				dataset = new ArrayList<>();
+				for (int j : indices) {
+					dataset.addAll(cross_validation_data.get(j));
+				}
+				indices.add(i,i);
+				weight = train_weight(dataset, weight, 
+						learning_rate, regularization);
+				accuracy += test(cross_validation_data.get(i), weight);
+			}
+			accs.add(accuracy);
+			weight = new HashMap<>();
+		}
+		int maxIndex = IntStream.range(0, accs.size()).boxed().max(comparingDouble(accs::get)).get();
+		return learning_rates[maxIndex];
+	}
 }
